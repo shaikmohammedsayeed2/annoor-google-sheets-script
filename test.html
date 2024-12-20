@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merge Data by Headers</title>
+  <style>
+    /* General styles */
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e2f;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: #29293d;
+      border-radius: 10px;
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      background: #3a3a4f;
+      color: #ffffff;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #generatedScriptContainer {
+      margin-top: 20px;
+      position: relative;
+    }
+
+    #generatedScript {
+      margin-top: 10px;
+      padding: 10px;
+      background: #1e1e2f;
+      border: 1px solid #4caf50;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 14px;
+      color: #9dfcba;
+      overflow-x: auto;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #4caf50;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+
+    .copy-btn:hover {
+      background: #45a049;
+    }
+
+    /* Responsive design */
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.25rem;
+      }
+
+      button {
+        font-size: 14px;
+        padding: 8px;
+      }
+
+      input {
+        padding: 8px;
+      }
+
+      .copy-btn {
+        font-size: 12px;
+        padding: 5px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Merge Data by Headers</h1>
+    <form id="mergeForm">
+      <div class="form-group">
+        <label for="sheet1FileId">Sheet 1 File ID:</label>
+        <input type="text" id="sheet1FileId" name="sheet1FileId" required>
+      </div>
+      <div class="form-group">
+        <label for="sheet2FileId">Sheet 2 File ID:</label>
+        <input type="text" id="sheet2FileId" name="sheet2FileId" required>
+      </div>
+      <div class="form-group">
+        <label for="sheet1Name">Sheet 1 Name:</label>
+        <input type="text" id="sheet1Name" name="sheet1Name" required>
+      </div>
+      <div class="form-group">
+        <label for="sheet2Name">Sheet 2 Name:</label>
+        <input type="text" id="sheet2Name" name="sheet2Name" required>
+      </div>
+      <button type="submit">Generate Script</button>
+    </form>
+
+    <div id="generatedScriptContainer" style="display: none;">
+      <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+      <div id="generatedScript"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("mergeForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      // Get form values
+      const sheet1FileId = document.getElementById("sheet1FileId").value;
+      const sheet2FileId = document.getElementById("sheet2FileId").value;
+      const sheet1Name = document.getElementById("sheet1Name").value;
+      const sheet2Name = document.getElementById("sheet2Name").value;
+
+      // Generate the script dynamically
+      const script = `
+function mergeDataByHeaders() {
+  var sheet1FileId = "${sheet1FileId}"; // Sheet 1 File ID
+  var sheet2FileId = "${sheet2FileId}"; // Sheet 2 File ID
+
+  var sheet1Name = "${sheet1Name}"; // Sheet 1 Name
+  var sheet2Name = "${sheet2Name}"; // Sheet 2 Name
+
+  // Open the two Sheets files
+  var sheet1File = SpreadsheetApp.openById(sheet1FileId);
+  var sheet2File = SpreadsheetApp.openById(sheet2FileId);
+  
+  var sheet1Data = sheet1File.getDataRange().getValues(); // Sheet1 Data
+  var sheet2Data = sheet2File.getDataRange().getValues(); // Sheet2 Data
+
+  var sheet1Headers = sheet1Data[0];
+  var sheet2Headers = sheet2Data[0];
+  
+  var sheet1IdIndex = sheet1Headers.indexOf("ADM No.");
+  var sheet2IdIndex = sheet2Headers.indexOf("ADM No.");
+  
+  if (sheet1IdIndex === -1 || sheet2IdIndex === -1) {
+    SpreadsheetApp.getUi().alert("Required column 'ADM No.' is missing!");
+    return;
+  }
+  
+  var sheet2Map = {};
+  for (var i = 1; i < sheet2Data.length; i++) { 
+    var id = sheet2Data[i][sheet2IdIndex];
+    sheet2Map[id] = sheet2Data[i];
+  }
+  
+  for (var j = 1; j < sheet1Data.length; j++) {
+    var id = sheet1Data[j][sheet1IdIndex];
+    if (sheet2Map[id]) {
+      for (var k = 0; k < sheet1Headers.length; k++) {
+        if (sheet2Headers.includes(sheet1Headers[k])) {
+          var index = sheet2Headers.indexOf(sheet1Headers[k]);
+          sheet1File.getSheetByName(sheet1Name).getRange(j + 1, k + 1).setValue(sheet2Map[id][index]);
+        }
+      }
+    }
+  }
+  SpreadsheetApp.flush();
+}
+      `;
+
+      // Display the script in the output area
+      const scriptContainer = document.getElementById("generatedScriptContainer");
+      const scriptElement = document.getElementById("generatedScript");
+      scriptElement.textContent = script;
+      scriptContainer.style.display = "block";
+    });
+
+    function copyToClipboard() {
+      const scriptElement = document.getElementById("generatedScript");
+      const text = scriptElement.textContent;
+
+      // Create a temporary textarea element to copy text
+      const tempTextArea = document.createElement("textarea");
+      tempTextArea.value = text;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempTextArea);
+
+      alert("Script copied to clipboard!");
+    }
+  </script>
+</body>
+</html>
